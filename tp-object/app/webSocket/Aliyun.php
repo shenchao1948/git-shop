@@ -75,12 +75,27 @@ class Aliyun
      */
     public function streamChat(string $message, callable $onChunk, array $options = []): bool
     {
+        return $this->streamChatWithContext($message, [], $onChunk, $options);
+    }
+
+    /**
+     * 流式调用阿里云百炼AI模型（带上下文）
+     *
+     * @param string $message 用户当前消息
+     * @param array $historyMessages 历史消息数组，格式: [['message_type' => 'user'|'ai', 'content' => '...'], ...]
+     * @param callable $onChunk 流式数据块回调函数 function(string $chunk): void
+     * @param array $options 可选配置参数
+     * @return bool 是否成功
+     */
+    public function streamChatWithContext(string $message, array $historyMessages, callable $onChunk, array $options = []): bool
+    {
         try {
-            // 构建请求体
-            $body = $this->buildRequestBody($message, $options);
+            // 构建请求体（包含历史上下文）
+            $body = $this->buildRequestBodyWithContext($message, $historyMessages, $options);
             
             echo "\n[DEBUG] 请求URL: {$this->baseUrl}\n";
-            echo "[DEBUG] 请求体: " . json_encode($body, JSON_UNESCAPED_UNICODE) . "\n";
+            echo "[DEBUG] 历史消息数量: " . count($historyMessages) . "\n";
+            echo "[DEBUG] 请求体: " . json_encode($body, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
 
             // 发送流式请求
             $response = $this->client->post($this->baseUrl, [
@@ -88,9 +103,6 @@ class Aliyun
                 'json' => $body,
                 'stream' => true, // 启用流式响应
             ]);
-            
-            echo "[DEBUG] 响应状态码: " . $response->getStatusCode() . "\n";
-            echo "[DEBUG] 响应头: " . json_encode($response->getHeaders(), JSON_UNESCAPED_UNICODE) . "\n";
 
             // 检查响应状态
             if ($response->getStatusCode() !== 200) {
@@ -116,44 +128,76 @@ class Aliyun
     }
 
     /**
-     * 构建请求体
+     * 构建请求体（带上下文）
      *
-     * @param string $message 用户消息
+     * @param string $message 用户当前消息
+     * @param array $historyMessages 历史消息数组
      * @param array $options 配置选项
      * @return array 请求体数组
      */
-    private function buildRequestBody(string $message, array $options): array
+    private function buildRequestBodyWithContext(string $message, array $historyMessages, array $options): array
     {
         // 判断是否是应用API（URL中包含/apps/）
         $isAppApi = strpos($this->baseUrl, '/apps/') !== false;
         
         if ($isAppApi) {
             // 应用API的请求格式
+            // 将历史对话拼接到 prompt 中实现上下文
+            $fullPrompt = $this->buildContextualPrompt($message, $historyMessages);
+            
             $requestBody = [
                 'input' => [
-                    'prompt' => $message,
+                    'prompt' => $fullPrompt,
                 ],
             ];
             
             // 只有当有额外参数时才添加 parameters
             if (!empty($options)) {
-                $requestBody['parameters'] = $options;
+                // 移除 session_id，因为我们已经手动拼接了上下文
+                unset($options['session_id']);
+                if (!empty($options)) {
+                    $requestBody['parameters'] = $options;
+                }
             }
+            
+            echo "[DEBUG] 应用API - 历史消息数量: " . count($historyMessages) . "\n";
+            echo "[DEBUG] 应用API - 拼接后的prompt长度: " . mb_strlen($fullPrompt) . "\n";
             
             return $requestBody;
         } else {
-            // 标准模型API的请求格式
+            // 标准模型API的请求格式（支持多轮对话）
             $config = array_merge($this->defaultConfig, $options);
+            
+            // 构建消息列表（包含历史上下文）
+            $messages = [];
+            
+            // 添加历史消息
+            foreach ($historyMessages as $historyMsg) {
+                if (isset($historyMsg['message_type']) && isset($historyMsg['content'])) {
+                    // 修正：user消息映射为'user'，ai消息映射为'assistant'
+                    $role = $historyMsg['message_type'] === 'user' ? 'user' : 'assistant';
+                    $messages[] = [
+                        'role' => $role,
+                        'content' => $historyMsg['content']
+                    ];
+                }
+            }
+            
+            // 添加当前用户消息
+            $messages[] = [
+                'role' => 'user',
+                'content' => $message
+            ];
+            
+            echo "[DEBUG] 标准API - 构建的消息列表:\n";
+            foreach ($messages as $idx => $msg) {
+                echo "  [$idx] {$msg['role']}: " . mb_substr($msg['content'], 0, 50) . "...\n";
+            }
             
             return [
                 'model' => $config['model'],
                 'input' => [
-                    'messages' => [
-                        [
-                            'role' => 'user',
-                            'content' => $message,
-                        ],
-                    ],
+                    'messages' => $messages,
                 ],
                 'parameters' => [
                     'result_format' => 'message',
@@ -164,6 +208,45 @@ class Aliyun
                 ],
             ];
         }
+    }
+
+    /**
+     * 构建包含上下文的prompt（用于应用API）
+     *
+     * @param string $currentMessage 当前用户消息
+     * @param array $historyMessages 历史消息数组
+     * @return string 拼接后的完整prompt
+     */
+    private function buildContextualPrompt(string $currentMessage, array $historyMessages): string
+    {
+        if (empty($historyMessages)) {
+            return $currentMessage;
+        }
+        
+        // 构建对话历史文本
+        $contextParts = [];
+        $contextParts[] = "以下是之前的对话历史：";
+        $contextParts[] = "========================================";
+        
+        foreach ($historyMessages as $historyMsg) {
+            if (isset($historyMsg['message_type']) && isset($historyMsg['content'])) {
+                $speaker = $historyMsg['message_type'] === 'user' ? '用户' : '助手';
+                $contextParts[] = "";
+                $contextParts[] = "{$speaker}：";
+                $contextParts[] = "{$historyMsg['content']}";
+            }
+        }
+        
+        // 添加分隔线和当前问题
+        $contextParts[] = "";
+        $contextParts[] = "========================================";
+        $contextParts[] = "以上是历史对话，请根据以上内容回答以下问题：";
+        $contextParts[] = "";
+        $contextParts[] = "用户：{$currentMessage}";
+        $contextParts[] = "";
+        $contextParts[] = "助手：";
+        
+        return implode("\n", $contextParts);
     }
 
     /**
@@ -269,29 +352,20 @@ class Aliyun
                                     // 应用API：计算增量部分
                                     $lastTextLen = mb_strlen($lastText, 'UTF-8');
                                     $currentTextLen = mb_strlen($currentText, 'UTF-8');
-                                    
-                                    echo "[DEBUG] 累积文本长度 - 上次: {$lastTextLen}, 当前: {$currentTextLen}\n";
-                                    echo "[DEBUG] 上次文本: " . mb_substr($lastText, 0, 50, 'UTF-8') . "...\n";
-                                    echo "[DEBUG] 当前文本: " . mb_substr($currentText, 0, 50, 'UTF-8') . "...\n";
-                                    
+
                                     // 只有当当前文本比上次长时才计算增量
                                     if ($currentTextLen > $lastTextLen) {
                                         $incrementalText = mb_substr($currentText, $lastTextLen, null, 'UTF-8');
                                         $lastText = $currentText; // 更新上次文本
-                                        
-                                        echo "[DEBUG] 提取增量文本 (长度: " . mb_strlen($incrementalText, 'UTF-8') . "): " . $incrementalText . "\n";
-                                        
+
                                         // 只发送真正的增量部分
                                         if (!empty($incrementalText)) {
                                             $onChunk($incrementalText);
                                         }
-                                    } else {
-                                        echo "[DEBUG] 跳过：当前文本长度未增加\n";
                                     }
                                     // 如果长度相同或更短，说明没有新内容，跳过
                                 } else {
                                     // 标准API：直接发送增量
-                                    echo "[DEBUG] 标准API增量文本: " . $currentText . "\n";
                                     $onChunk($currentText);
                                 }
                             }
@@ -455,36 +529,25 @@ class Aliyun
                 'headers' => $this->buildHeaders(),
                 'json' => $body,
             ]);
-            
-            echo "[DEBUG] 响应状态码: " . $response->getStatusCode() . "\n";
 
             if ($response->getStatusCode() !== 200) {
                 throw new \Exception('API请求失败，状态码: ' . $response->getStatusCode());
             }
 
             $rawContent = $response->getBody()->getContents();
-            
-            echo "[DEBUG] 原始响应内容: " . substr($rawContent, 0, 500) . "\n";
-            
+
             $result = json_decode($rawContent, true);
             
             // 检查JSON解析是否成功
             if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
-                echo "[ERROR] JSON解析错误: " . json_last_error_msg() . "\n";
-                echo "[ERROR] 原始响应: " . $rawContent . "\n";
                 return null;
             }
-            
-            echo "[DEBUG] 解析后响应: " . json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
 
             // 尝试多种响应格式
             $content = $this->extractContentFromResponse($result);
             
             if (!empty($content)) {
-                echo "[DEBUG] 提取到的内容长度: " . mb_strlen($content) . "\n";
                 return $content;
-            } else {
-                echo "[DEBUG] 未能提取到内容\n";
             }
 
             return null;

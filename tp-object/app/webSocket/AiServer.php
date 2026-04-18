@@ -467,7 +467,6 @@ class AiServer
         }
 
         // 发送AI开始响应标记
-        echo "发送AI开始响应标记...\n";
         $this->sendToClient($connection, [
             'type' => 'chat',
             'data' => [
@@ -481,14 +480,18 @@ class AiServer
             ]
         ]);
 
+        // 获取最近30条对话历史作为上下文
+        $contextMessages = $this->getRecentChatHistory($userToken, 20);
+        echo "获取到 " . count($contextMessages) . " 条历史消息作为上下文\n";
+
         // 累积AI回复内容
         $fullResponse = '';
         $chunkCount = 0;
 
-        echo "开始调用阿里云百炼流式接口...\n";
+        echo "开始调用阿里云百炼流式接口（带上下文）...\n";
         
-        // 调用阿里云百炼流式接口
-        $success = $this->aliyun->streamChat($message, function($chunk) use ($connection, $roomId, $userToken, &$fullResponse, &$chunkCount) {
+        // 调用阿里云百炼流式接口，传入历史上下文
+        $success = $this->aliyun->streamChatWithContext($message, $contextMessages, function($chunk) use ($connection, $roomId, $userToken, &$fullResponse, &$chunkCount) {
             $fullResponse .= $chunk;
             $chunkCount++;
             
@@ -507,10 +510,6 @@ class AiServer
             ]);
         });
 
-        echo "阿里云百炼调用完成，成功: " . ($success ? '是' : '否') . ", 数据块数: {$chunkCount}, 总长度: " . mb_strlen($fullResponse) . "\n";
-
-        // 发送AI响应结束标记
-        echo "发送AI响应结束标记...\n";
         $this->sendToClient($connection, [
             'type' => 'chat',
             'data' => [
@@ -526,10 +525,97 @@ class AiServer
         ]);
 
         if ($success) {
-            echo "✅ AI回复完成，总长度: " . mb_strlen($fullResponse) . "\n";
+            // 保存对话到数据库
+            $this->saveChatHistory($userToken, $message, $fullResponse, $roomId);
         } else {
             echo "❌ AI服务响应失败\n";
             $this->sendErrorMessage($connection, 'AI服务响应失败');
+        }
+    }
+
+    /**
+     * 获取用户最近的对话历史
+     * @param string $userToken 用户token
+     * @param int $limit 限制条数
+     * @return array 对话历史数组
+     */
+    private function getRecentChatHistory(string $userToken, int $limit = 30): array
+    {
+        try {
+            // 通过token查询用户ID
+            $user = User::where('user_token', $userToken)->find();
+            if (!$user || empty($user->id)) {
+                echo "获取对话历史失败：未找到用户信息\n";
+                return [];
+            }
+            
+            $userId = $user->id;
+            
+            // 查询最近N条对话历史，按时间倒序
+            $history = RoomCommons::where('user_id', $userId)
+                ->order('create_time', 'desc')
+                ->limit($limit)
+                ->select()
+                ->toArray();
+            
+            // 反转为正序（旧消息在前，新消息在后）
+            $history = array_reverse($history);
+            
+            echo "✅ 获取到 " . count($history) . " 条历史消息\n";
+            if (count($history) > 0) {
+                echo "   第一条时间: " . ($history[0]['create_time'] ?? 'N/A') . "\n";
+                echo "   最后一条时间: " . ($history[count($history)-1]['create_time'] ?? 'N/A') . "\n";
+            }
+            
+            return $history;
+            
+        } catch (\Exception $e) {
+            echo "❌ 获取对话历史异常: " . $e->getMessage() . "\n";
+            echo "错误文件: " . $e->getFile() . ":" . $e->getLine() . "\n";
+            return [];
+        }
+    }
+
+    /**
+     * 保存聊天历史到数据库
+     * @param string $userToken 用户token
+     * @param string $userMessage 用户消息
+     * @param string $aiResponse AI回复
+     * @param int|null $roomId 房间ID
+     */
+    private function saveChatHistory(string $userToken, string $userMessage, string $aiResponse, ?int $roomId): void
+    {
+        try {
+            // 通过token查询用户ID
+            $user = User::where('user_token', $userToken)->find();
+            if (!$user || empty($user->id)) {
+                echo "保存对话历史失败：未找到用户信息\n";
+                return;
+            }
+            
+            $userId = $user->id;
+            
+            // 保存用户消息
+            RoomCommons::create([
+                'user_id' => $userId,
+                'room_id' => $roomId,
+                'message_type' => 'user',
+                'content' => $userMessage
+            ]);
+            
+            // 保存AI回复
+            RoomCommons::create([
+                'user_id' => $userId,
+                'room_id' => $roomId,
+                'message_type' => 'ai',
+                'content' => $aiResponse
+            ]);
+            
+            echo "✅ 对话历史已保存，用户ID: {$userId}, 房间ID: {$roomId}\n";
+            
+        } catch (\Exception $e) {
+            echo "❌ 保存对话历史异常: " . $e->getMessage() . "\n";
+            echo "错误文件: " . $e->getFile() . ":" . $e->getLine() . "\n";
         }
     }
 

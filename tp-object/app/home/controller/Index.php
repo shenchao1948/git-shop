@@ -53,6 +53,35 @@ class Index extends BaseController
         die();
     }
 
+    /**
+     * 获取用户的对话历史
+     * @return \think\response\Json
+     */
+    public function getChatHistory()
+    {
+        if(!session('?userList')){
+            return json(['code' => 401, 'msg' => '未登录']);
+        }
+        
+        $userId = session("userList.id");
+        $page = input('get.page/d', 1);
+        $pageSize = input('get.page_size/d', 50);
+        
+        // 查询用户的对话历史，按时间正序（旧消息在前）
+        $history = RoomCommons::where('user_id', $userId)
+            ->order('create_time', 'asc')
+            ->page($page, $pageSize)
+            ->select()
+            ->toArray();
+        
+        return json([
+            'code' => 200,
+            'msg' => 'success',
+            'data' => $history,
+            'total' => RoomCommons::where('user_id', $userId)->count()
+        ]);
+    }
+
     protected function login()
     {
         $ip = request()->ip();

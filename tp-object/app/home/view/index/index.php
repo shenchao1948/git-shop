@@ -939,7 +939,10 @@
             <div class="col-lg-12">
                 <?php if(session('?userList')): ?>
                     <!-- AI 对话组件 -->
-                    <input type="hidden" id="currentUserId" value="{$token}">
+<?php
+                    $historyUrl = url('/home/index/getChatHistory');
+?>
+                    <input type="hidden" id="currentUserId" data-url="{$historyUrl}" value="{$token}">
                     
                     <div id="chatContainer" class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6" style="max-width: 800px; margin: 0 auto;">
                         <!-- 聊天头部 -->
