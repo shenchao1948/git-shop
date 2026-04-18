@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="WEB_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/tp-admin/app" isTestSource="false" packagePrefix="app\" />
+      <sourceFolder url="file://$MODULE_DIR$/tp-admin/extend" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/spec" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/tp-object/app" isTestSource="false" packagePrefix="app\" />
+      <sourceFolder url="file://$MODULE_DIR$/tp-object/extend" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/composer" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/league/flysystem" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/league/flysystem-local" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/league/mime-type-detection" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/psr/container" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/psr/http-message" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/psr/log" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/psr/simple-cache" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/symfony/deprecation-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/symfony/polyfill-mbstring" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/symfony/var-dumper" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/framework" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-container" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-dumper" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-filesystem" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-helper" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-orm" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-trace" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-validate" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-multi-app" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/guzzlehttp/guzzle" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/guzzlehttp/promises" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/guzzlehttp/psr7" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/psr/http-client" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/psr/http-factory" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/ralouphie/getallheaders" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/revolt/event-loop" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/symfony/finder" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-template" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-view" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-admin/vendor/topthink/think-worker" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/composer" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/guzzlehttp/guzzle" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/guzzlehttp/promises" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/guzzlehttp/psr7" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/league/flysystem" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/league/flysystem-local" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/league/mime-type-detection" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/psr/container" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/psr/http-client" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/psr/http-factory" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/psr/http-message" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/psr/log" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/psr/simple-cache" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/ralouphie/getallheaders" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/symfony/deprecation-contracts" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/symfony/polyfill-mbstring" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/symfony/var-dumper" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/framework" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-container" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-dumper" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-filesystem" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-helper" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-multi-app" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-orm" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-template" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-trace" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-validate" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/topthink/think-view" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/workerman/coroutine" />
+      <excludeFolder url="file://$MODULE_DIR$/tp-object/vendor/workerman/workerman" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="MessDetectorOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PHPCSFixerOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PHPCodeSnifferOptionsConfiguration">
+    <option name="highlightLevel" value="WARNING" />
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PhpIncludePathManager">
+    <include_path>
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-helper" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/psr/simple-cache" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-container" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/framework" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-filesystem" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-dumper" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-trace" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-validate" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-orm" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/league/mime-type-detection" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/league/flysystem" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/league/flysystem-local" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/composer" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-multi-app" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-view" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-template" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/symfony/finder" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/topthink/think-worker" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/revolt/event-loop" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/psr/http-client" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/guzzlehttp/guzzle" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/guzzlehttp/promises" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/guzzlehttp/psr7" />
+      <path value="$PROJECT_DIR$/tp-admin/vendor/ralouphie/getallheaders" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/guzzlehttp/promises" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/composer" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/guzzlehttp/psr7" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/workerman/coroutine" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/workerman/workerman" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/psr/simple-cache" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-multi-app" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/league/flysystem" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/league/flysystem-local" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/league/mime-type-detection" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/framework" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-container" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-dumper" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-filesystem" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-helper" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-orm" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-trace" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-validate" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/ralouphie/getallheaders" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/psr/http-client" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-view" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/topthink/think-template" />
+      <path value="$PROJECT_DIR$/tp-object/vendor/guzzlehttp/guzzle" />
+    </include_path>
+  </component>
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.0" />
+  <component name="PhpStanOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PhpUnit">
+    <phpunit_settings>
+      <PhpUnitSettings custom_loader_path="$PROJECT_DIR$/tp-admin/vendor/autoload.php" />
+    </phpunit_settings>
+  </component>
+  <component name="PsalmOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+</project>
