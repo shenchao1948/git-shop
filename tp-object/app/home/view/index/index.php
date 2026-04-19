@@ -747,10 +747,10 @@
                 <a href="#contact" class="nav-link">联系我</a>
             </li>
             <li class="nav-item">
-                <a href="http://www.shenchao.me/swoper" class="nav-link">日常管理系统</a>
+                <a href="http://www.shenchao.me:8080/swoper" class="nav-link">日常管理系统</a>
             </li>
             <li class="nav-item">
-                <a href="http://www.shenchao.me/swoper/site/longData" class="nav-link">数据展示</a>
+                <a href="http://www.shenchao.me:8080/swoper/site/longData" class="nav-link">数据展示</a>
             </li>
         </ul>
     </div>
@@ -853,7 +853,7 @@
                 <ul class="carousel-track">
                     <!-- 项目 1 -->
                     <li class="carousel-card">
-                        <a href="http://www.shenchao.me/swoper" target="_blank" class="project-card-link">
+                        <a href="http://www.shenchao.me:8080/swoper" target="_blank" class="project-card-link">
                             <div class="project-card">
                                 <div class="card-img"><i class="fas fa-file-invoice-dollar"></i></div>
                                 <div class="card-body">
@@ -887,7 +887,7 @@
 
                     <!-- 项目 3 -->
                     <li class="carousel-card">
-                        <a href="http://www.shenchao.me/swoper/site/longData" target="_blank" class="project-card-link">
+                        <a href="http://www.shenchao.me:8080/swoper/site/longData" target="_blank" class="project-card-link">
                             <div class="project-card">
                                 <div class="card-img"><i class="fas fa-chart-line"></i></div>
                                 <div class="card-body">
