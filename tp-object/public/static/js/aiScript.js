@@ -34,6 +34,7 @@ const state = {
 
 // 页面加载完成后初始化
 $(document).ready(function () {
+    CONFIG.WS_URL = $('#currentUserId').data('ws')+":2346";
     console.log('=== AI聊天系统初始化 ===');
     
     // 获取用户信息

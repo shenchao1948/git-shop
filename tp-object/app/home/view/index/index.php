@@ -941,8 +941,11 @@
                     <!-- AI 对话组件 -->
 <?php
                     $historyUrl = url('/home/index/getChatHistory');
+                    $domain = request()->domain();  // 先获取带端口的
+                    $domain = explode(':',$domain);
+                    $urlHost = $domain[0].":".$domain[1];
 ?>
-                    <input type="hidden" id="currentUserId" data-url="{$historyUrl}" value="{$token}">
+                    <input type="hidden" id="currentUserId" data-ws="{$urlHost}"  data-url="{$historyUrl}" value="{$token}">
                     
                     <div id="chatContainer" class="bg-white rounded-2xl shadow-xl overflow-hidden mb-6" style="max-width: 800px; margin: 0 auto;">
                         <!-- 聊天头部 -->
