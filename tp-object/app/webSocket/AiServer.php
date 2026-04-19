@@ -38,7 +38,7 @@ class AiServer
 
     /**
      * 用户连接映射表，用于快速查找用户对应的连接
-     * key: user_token, value: TcpConnection
+     * key: user_token, value: array of TcpConnection (支持同一用户多个连接)
      * @var array
      */
     private array $userConnections = [];
@@ -262,9 +262,16 @@ class AiServer
             return;
         }
 
-        // 建立用户连接映射
+        // 建立用户连接映射（支持同一用户多个连接）
         $connection->userId = $token;
-        $this->userConnections[$token] = $connection;
+        
+        // 如果该用户还没有连接数组，初始化
+        if (!isset($this->userConnections[$token])) {
+            $this->userConnections[$token] = [];
+        }
+        
+        // 添加新连接到数组（使用connection ID作为key避免重复）
+        $this->userConnections[$token][$connection->id] = $connection;
         $this->clients[$connection->id]["userID"] = $token;
         
         // 记录用户房间信息
@@ -275,7 +282,10 @@ class AiServer
         if (!isset($this->roomUsers[$roomId])) {
             $this->roomUsers[$roomId] = [];
         }
-        $this->roomUsers[$roomId][] = $token;
+        // 避免重复添加
+        if (!in_array($token, $this->roomUsers[$roomId])) {
+            $this->roomUsers[$roomId][] = $token;
+        }
 
         // 发送认证成功消息
         $this->sendToClient($connection, [
@@ -287,7 +297,7 @@ class AiServer
             ]
         ]);
 
-        echo "用户 {$userId} (token: {$token}) 认证成功，加入房间 {$roomId}\n";
+        echo "用户 {$userId} (token: {$token}) 认证成功，加入房间 {$roomId}，当前连接数: " . count($this->userConnections[$token]) . "\n";
     }
 
     /**
@@ -449,25 +459,31 @@ class AiServer
             }
         }
 
-        // 先发送用户消息到房间（如果需要）
+        // 构造用户消息数据
+        $userMessageData = [
+            'type' => 'chat',
+            'data' => [
+                'isStreaming' => false,
+                'content' => $message,
+                'timestamp' => time(),
+                'room_id' => $roomId,
+                'sender_id' => $userToken,
+                'sender_connection_id' => $connection->id, // 添加发送者连接ID
+                'is_ai' => false
+            ]
+        ];
+
+        // 先向该用户的所有其他连接发送用户消息（除了当前发送的连接）
+        $this->sendToOtherUserConnections($userToken, $connection->id, $userMessageData);
+        
+        // 再广播到房间（给房间内其他用户）
         if ($roomId) {
-            $userMessageData = [
-                'type' => 'chat',
-                'data' => [
-                    'isStreaming' => false,
-                    'content' => $message,
-                    'timestamp' => time(),
-                    'room_id' => $roomId,
-                    'sender_id' => $userToken,
-                    'is_ai' => false
-                ]
-            ];
             $this->broadcastToRoom($userMessageData, $roomId, $connection);
             echo "已广播用户消息到房间 {$roomId}\n";
         }
 
-        // 发送AI开始响应标记
-        $this->sendToClient($connection, [
+        // 向该用户的所有连接发送AI开始响应标记
+        $this->sendToAllUserConnections($userToken, [
             'type' => 'chat',
             'data' => [
                 'isStreaming' => true,
@@ -491,12 +507,12 @@ class AiServer
         echo "开始调用阿里云百炼流式接口（带上下文）...\n";
         
         // 调用阿里云百炼流式接口，传入历史上下文
-        $success = $this->aliyun->streamChatWithContext($message, $contextMessages, function($chunk) use ($connection, $roomId, $userToken, &$fullResponse, &$chunkCount) {
+        $success = $this->aliyun->streamChatWithContext($message, $contextMessages, function($chunk) use ($userToken, $roomId, &$fullResponse, &$chunkCount) {
             $fullResponse .= $chunk;
             $chunkCount++;
             
-            // 实时发送每个文本块给客户端（只发送给当前用户）
-            $this->sendToClient($connection, [
+            // 实时发送每个文本块给该用户的所有连接
+            $this->sendToAllUserConnections($userToken, [
                 'type' => 'chat',
                 'data' => [
                     'isStreaming' => true,
@@ -510,7 +526,8 @@ class AiServer
             ]);
         });
 
-        $this->sendToClient($connection, [
+        // 向该用户的所有连接发送AI响应结束标记
+        $this->sendToAllUserConnections($userToken, [
             'type' => 'chat',
             'data' => [
                 'isStreaming' => false,
@@ -640,6 +657,68 @@ class AiServer
     }
 
     /**
+     * 向同一用户的所有连接发送消息
+     * @param string $userToken 用户token
+     * @param array $data 消息数据
+     */
+    private function sendToAllUserConnections(string $userToken, array $data): void
+    {
+        if (!isset($this->userConnections[$userToken])) {
+            return;
+        }
+
+        $sentCount = 0;
+        foreach ($this->userConnections[$userToken] as $connId => $connection) {
+            try {
+                $this->sendToClient($connection, $data);
+                $sentCount++;
+            } catch (\Exception $e) {
+                echo "发送消息到连接 {$connId} 失败: " . $e->getMessage() . "\n";
+                // 移除失效的连接
+                unset($this->userConnections[$userToken][$connId]);
+            }
+        }
+
+        if ($sentCount > 0) {
+            echo "消息已发送给 {$userToken} 的 {$sentCount} 个连接\n";
+        }
+    }
+
+    /**
+     * 向同一用户的其他连接发送消息（排除指定连接）
+     * @param string $userToken 用户token
+     * @param int $excludeConnId 排除的连接ID
+     * @param array $data 消息数据
+     */
+    private function sendToOtherUserConnections(string $userToken, int $excludeConnId, array $data): void
+    {
+        if (!isset($this->userConnections[$userToken])) {
+            return;
+        }
+
+        $sentCount = 0;
+        foreach ($this->userConnections[$userToken] as $connId => $connection) {
+            // 跳过指定的连接
+            if ($connId == $excludeConnId) {
+                continue;
+            }
+            
+            try {
+                $this->sendToClient($connection, $data);
+                $sentCount++;
+            } catch (\Exception $e) {
+                echo "发送消息到连接 {$connId} 失败: " . $e->getMessage() . "\n";
+                // 移除失效的连接
+                unset($this->userConnections[$userToken][$connId]);
+            }
+        }
+
+        if ($sentCount > 0) {
+            echo "用户消息已同步到 {$userToken} 的其他 {$sentCount} 个连接\n";
+        }
+    }
+
+    /**
      * 广播消息给房间内所有用户（除了发送者）
      * @param array $message 消息数据
      * @param int $roomId 房间ID
@@ -653,19 +732,26 @@ class AiServer
 
         $sentCount = 0;
         foreach ($this->roomUsers[$roomId] as $userToken) {
-            // 跳过发送者
+            // 跳过发送者（如果是排除特定连接，则检查该连接的用户）
             if ($excludeConnection && isset($excludeConnection->userId) && $excludeConnection->userId === $userToken) {
                 continue;
             }
 
-            // 检查用户是否在线
+            // 向该用户的所有连接发送消息
             if (isset($this->userConnections[$userToken])) {
-                $this->sendToClient($this->userConnections[$userToken], $message);
-                $sentCount++;
+                foreach ($this->userConnections[$userToken] as $connId => $connection) {
+                    try {
+                        $this->sendToClient($connection, $message);
+                        $sentCount++;
+                    } catch (\Exception $e) {
+                        echo "广播消息到连接 {$connId} 失败: " . $e->getMessage() . "\n";
+                        unset($this->userConnections[$userToken][$connId]);
+                    }
+                }
             }
         }
 
-        echo "消息广播到房间 {$roomId}, 发送给 {$sentCount} 个用户\n";
+        echo "消息广播到房间 {$roomId}, 发送给 {$sentCount} 个连接\n";
     }
 
     /**
@@ -746,33 +832,44 @@ class AiServer
         // 如果是已认证用户，从用户连接映射中移除
         if (isset($connection->userId)) {
             $userToken = $connection->userId;
-            unset($this->userConnections[$userToken]);
             
-            // 从房间中移除用户
-            if (isset($this->userToRoom[$userToken])) {
-                $roomId = $this->userToRoom[$userToken];
-                if (isset($this->roomUsers[$roomId])) {
-                    $key = array_search($userToken, $this->roomUsers[$roomId]);
-                    if ($key !== false) {
-                        unset($this->roomUsers[$roomId][$key]);
-                        // 重新索引数组
-                        $this->roomUsers[$roomId] = array_values($this->roomUsers[$roomId]);
+            // 从该用户的连接数组中移除当前连接
+            if (isset($this->userConnections[$userToken])) {
+                unset($this->userConnections[$userToken][$connection->id]);
+                
+                // 如果该用户没有其他连接了，清理整个数组
+                if (empty($this->userConnections[$userToken])) {
+                    unset($this->userConnections[$userToken]);
+                    
+                    // 从房间中移除用户
+                    if (isset($this->userToRoom[$userToken])) {
+                        $roomId = $this->userToRoom[$userToken];
+                        if (isset($this->roomUsers[$roomId])) {
+                            $key = array_search($userToken, $this->roomUsers[$roomId]);
+                            if ($key !== false) {
+                                unset($this->roomUsers[$roomId][$key]);
+                                // 重新索引数组
+                                $this->roomUsers[$roomId] = array_values($this->roomUsers[$roomId]);
+                            }
+                            
+                            // 如果房间为空，删除房间
+                            if (empty($this->roomUsers[$roomId])) {
+                                unset($this->roomUsers[$roomId]);
+                                echo "房间 {$roomId} 已清空并删除\n";
+                            }
+                        }
+                        
+                        unset($this->userToRoom[$userToken]);
                     }
                     
-                    // 如果房间为空，删除房间
-                    if (empty($this->roomUsers[$roomId])) {
-                        unset($this->roomUsers[$roomId]);
-                        echo "房间 {$roomId} 已清空并删除\n";
-                    }
+                    // 清理消息时间记录
+                    unset($this->lastMessageTime[$userToken]);
+                    
+                    echo "用户 {$userToken} 的所有连接已断开\n";
+                } else {
+                    echo "用户 {$userToken} 的一个连接断开，剩余 " . count($this->userConnections[$userToken]) . " 个连接\n";
                 }
-                
-                unset($this->userToRoom[$userToken]);
             }
-            
-            // 清理消息时间记录
-            unset($this->lastMessageTime[$userToken]);
-            
-            echo "用户 {$userToken} 断开连接\n";
         }
 
         echo "客户端 {$connection->id} 断开连接, 剩余连接数: " . count($this->clients) . "\n";
