@@ -2,7 +2,7 @@
 
 // 全局配置
 const CONFIG = {
-    WS_URL: 'ws://localhost:2346',
+    WS_URL: 'http://www.shenchao.me:2346',
     MAX_MESSAGE_LENGTH: 500,
     RECONNECT_INTERVALS: [1000, 2000, 5000, 10000, 30000], // 指数退避重连间隔
     HEARTBEAT_INTERVAL: 25000, // 25秒发送一次心跳
