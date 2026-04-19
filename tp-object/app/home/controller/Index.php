@@ -23,16 +23,6 @@ class Index extends BaseController
             "token" => session("userList.user_token"),
         ));
     }
-    public function ai()
-    {
-        if(!session('?userList')){
-            $this->login();
-        }
-        return view("ai",array(
-            "hostUrl" => request()->getHostUrl(),
-            "token" => session("userList.user_token"),
-        ));
-    }
 
     // 获取AI对话组件（用于嵌入到首页）
     public function aiComponent()
@@ -44,13 +34,6 @@ class Index extends BaseController
             "hostUrl" => request()->getHostUrl(),
             "token" => session("userList.user_token"),
         ));
-    }
-
-    public function test()
-    {
-        $count= RoomCommons::where(array("user_id"=>3))->count();
-        var_dump($count);
-        die();
     }
 
     /**

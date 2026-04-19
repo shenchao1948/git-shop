@@ -349,12 +349,14 @@
         }
 
         /* ==================== 关于我 & 技能 ==================== */
-        .text-muted { 
-            --bs-text-opacity: 1; 
-            color: #6c757d !important; 
+
+        .text-muted {
+            --bs-text-opacity: 1;
+            color: #bfbfbf !important;
         }
-        
-        /* 自定义5列布局 */
+        .text-muted .text-white{ color: #fff);
+
+            /* 自定义5列布局 */
         @media (min-width: 992px) {
             .col-lg-2-4 {
                 flex: 0 0 20%;
@@ -761,6 +763,8 @@
     <div class="container">
         <h1>你好，我是沈超</h1>
         <p>PHP 后端开发工程师</p>
+        <p>
+            <small class="text-muted"><i class="fas fa-info-circle"></i> 可以在页面底部<a href="#contact" class="text-white">联系我</a>，和<span class="text-white">AI助手</span>对话了解我的技能。</small>
         </p>
         <a href="#projects" class="btn">查看我的作品</a>
     </div>

@@ -100,23 +100,7 @@ class AiServer
      */
     public function __construct()
     {
-        // 创建WebSocket工作进程，监听2346端口
-        $this->worker = new Worker("websocket://0.0.0.0:2346");
-        // 设置工作进程数为4，提高并发处理能力
-        $this->worker->count = 4;
-        // 设置进程名称，便于进程管理
-        $this->worker->name = 'ChatWebSocket';
 
-        // 设置工作进程启动回调
-        $this->worker->onWorkerStart = [$this, 'onWorkerStart'];
-        // 设置新连接建立回调
-        $this->worker->onConnect = [$this, 'onConnect'];
-        // 设置接收到消息回调
-        $this->worker->onMessage = [$this, 'onMessage'];
-        // 设置连接关闭回调
-        $this->worker->onClose = [$this, 'onClose'];
-        // 设置错误回调
-        $this->worker->onError = [$this, 'onError'];
     }
 
     /**
@@ -898,10 +882,58 @@ class AiServer
     }
 
     /**
-     * 启动WebSocket服务器
+     * 启动WebSocket服务器（统一入口）
      */
     public function run(): void
     {
+        // 获取阿里云配置文件中的 WebSocket SSL 设置
+        $sslConfig = config('aliyun.websocket_ssl', []);
+        $isSslEnabled = $sslConfig['enable'] ?? false;
+        $port = 2346; 
+
+        echo "正在启动 WebSocket 服务器 (端口: {$port}, SSL: " . ($isSslEnabled ? '开启' : '关闭') . ")...\n";
+
+        $workerContext = [];
+        if ($isSslEnabled) {
+            $localCert = $sslConfig['local_cert'] ?? '';
+            $localPk = $sslConfig['local_pk'] ?? '';
+
+            // 【调试】强制打印路径并检查
+            echo "[DEBUG] 证书路径: " . realpath($localCert) . "\n";
+            echo "[DEBUG] 私钥路径: " . realpath($localPk) . "\n";
+
+            if (!file_exists($localCert) || !file_exists($localPk)) {
+                echo "❌ [ERROR] 证书文件不存在！请检查 config/aliyun.php\n";
+                // 即使报错也继续尝试启动，但会失败
+            } else {
+                $workerContext = array(
+                    'ssl' => array(
+                        'local_cert'  => $localCert,
+                        'local_pk'    => $localPk,
+                        'verify_peer' => false,
+                    )
+                );
+                echo "✅ WSS (SSL) 模式已启用，证书加载成功\n";
+            }
+        }
+
+        $worker = new Worker("websocket://0.0.0.0:{$port}", $workerContext);
+        
+        if ($isSslEnabled) {
+            $worker->transport = 'ssl';
+        }
+
+        $worker->count = 1; 
+        $worker->name = 'ChatWebSocket';
+
+        // 绑定回调函数
+        $worker->onWorkerStart = [$this, 'onWorkerStart'];
+        $worker->onConnect = [$this, 'onConnect'];
+        $worker->onMessage = [$this, 'onMessage'];
+        $worker->onClose = [$this, 'onClose'];
+        $worker->onError = [$this, 'onError'];
+
+        // 运行 Worker
         Worker::runAll();
     }
 }

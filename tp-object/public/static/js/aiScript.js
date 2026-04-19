@@ -79,33 +79,43 @@ function initializeUserInfo() {
 
 // 初始化WebSocket连接
 function initWebSocket() {
-    if (state.ws) {
-        state.ws.close();
-    }
+    // 获取基础地址
+    let host = document.getElementById('currentUserId').getAttribute('data-ws');
     
-    try {
-        state.ws = new WebSocket(CONFIG.WS_URL);
-        
-        state.ws.onopen = handleWebSocketOpen;
-        state.ws.onmessage = handleWebSocketMessage;
-        state.ws.onclose = handleWebSocketClose;
-        state.ws.onerror = handleWebSocketError;
-        
-    } catch (e) {
-        showSystemMessage("无法连接到服务器", "error");
-        scheduleReconnect();
+    // 去除协议头和端口
+    host = host.replace(/^https?:\/\//, '').replace(/:\d+$/, '');
+
+    let wsUrl;
+    if (location.protocol === 'https:') {
+        wsUrl = `wss://${host}:2346`;
+    } else {
+        wsUrl = `ws://${host}:2346`;
     }
+
+    console.log("正在连接 WebSocket:", wsUrl);
+
+    // 【关键修改】必须赋值给 state.ws，而不是全局的 ws
+    state.ws = new WebSocket(wsUrl);
+    
+    state.ws.onopen = handleWebSocketOpen;
+    state.ws.onmessage = handleWebSocketMessage;
+    state.ws.onclose = handleWebSocketClose;
+    state.ws.onerror = handleWebSocketError;
 }
 
 // WebSocket连接成功
 function handleWebSocketOpen(event) {
+    console.log("✅ [DEBUG] WebSocket onopen 触发！");
+    
+    // 【关键】先更新状态，再执行后续逻辑
     state.isConnected = true;
     state.reconnectAttempts = 0;
     
-    // 生成唯一的连接ID（使用时间戳+随机数）
+    // 生成唯一的连接ID
     state.connectionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
-    // 发送认证消息
+    console.log("🚀 [DEBUG] 开始认证流程...");
+    // 直接调用认证，不要等待
     authenticateWebSocket();
     
     // 显示连接状态
@@ -268,6 +278,8 @@ function stopHeartbeat() {
 
 // WebSocket连接关闭
 function handleWebSocketClose(event) {
+    console.log("🔴 [DEBUG] WebSocket onClose 触发! Code:", event.code, "Reason:", event.reason);
+    
     state.isConnected = false;
     state.isAuthenticated = false;
     stopHeartbeat();
@@ -300,11 +312,23 @@ function scheduleReconnect() {
 
 // 认证WebSocket连接
 function authenticateWebSocket() {
-    if (!state.ws || !state.isConnected) {
+    console.log("🔑 [DEBUG] 准备发送认证消息, state.userToken:", state.userToken);
+    console.log("🔗 [DEBUG] 当前 isConnected 状态:", state.isConnected);
+
+    // 【修改】只要 ws 对象存在就尝试发送，不再强求 isConnected (因为 onopen 刚触发)
+    if (!state.ws) {
+        console.warn("⚠️ [DEBUG] 认证失败: state.ws 不存在");
         return;
     }
     
+    // 如果正在认证中，防止重复发送
     if (state.isAuthenticating) {
+        return;
+    }
+
+    if (!state.userToken) {
+        console.error("❌ [DEBUG] 认证失败: state.userToken 为空！");
+        showSystemMessage("用户认证失败：Token 缺失", "error");
         return;
     }
     
@@ -318,7 +342,14 @@ function authenticateWebSocket() {
         }
     };
     
-    state.ws.send(JSON.stringify(authData));
+    try {
+        console.log("📤 [DEBUG] 正在发送认证数据:", authData);
+        // 【关键修改】使用 state.ws 发送
+        state.ws.send(JSON.stringify(authData));
+        console.log("✅ [DEBUG] 认证消息已发出");
+    } catch (e) {
+        console.error("❌ [DEBUG] 发送认证消息异常:", e);
+    }
     
     // 5秒后重置认证状态
     setTimeout(() => {
@@ -400,7 +431,7 @@ function appendMessageToChat(sender, content, isStreaming = false, createNewBubb
         <div class="flex ${sender === 'user' ? 'justify-end' : 'justify-start'} message-enter">
             <div class="max-w-xs lg:max-w-md ${sender === 'user' ? 'bg-blue-500 text-white rounded-br-none' : 'bg-white border border-gray-200 rounded-bl-none'} rounded-2xl p-4 shadow-sm">
                 <div class="flex items-center mb-1">
-                    <i class="fas ${sender === 'user' ? 'fa-user' : 'fa-robot'} mr-2"></i>
+                    <i class="fas ${sender === 'user' ? 'fa-user' : 'fa-robot'} text-primary mr-2"></i>
                     <span class="font-medium">${sender === 'user' ? '你' : 'AI助手'}</span>
                     <span class="ml-auto text-xs opacity-70">${timeStr}</span>
                 </div>
@@ -673,6 +704,10 @@ function clearChat() {
 // 加载聊天历史
 function loadChatHistory() {
     var historyUrl = $('#currentUserId').data('url');
+    
+    // 【关键】在请求开始前，先清空聊天框，防止与 HTML 硬编码的消息重复
+    $('#chatMessages').empty(); 
+
     $.ajax({
         url: historyUrl,
         type: 'GET',
@@ -683,9 +718,6 @@ function loadChatHistory() {
         success: function(response) {
             if (response.code === 200 && response.data && response.data.length > 0) {
                 console.log('加载历史记录:', response.data.length, '条');
-                
-                // 清空欢迎消息
-                $('#chatMessages').empty();
                 
                 // 遍历历史记录并显示
                 let userCount = 0;
@@ -711,9 +743,7 @@ function loadChatHistory() {
         },
         error: function(xhr, status, error) {
             console.error('加载聊天历史失败:', error);
-            console.error('响应状态:', xhr.status);
-            console.error('响应内容:', xhr.responseText);
-            // 出错时显示欢迎消息
+            // 出错时也显示欢迎消息，避免页面空白
             appendMessageToChat('bot', "您好！我是沈超的应聘助手，随时为您解答招聘问题。请问您有什么想问沈超的吗？");
         }
     });
