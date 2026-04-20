@@ -238,7 +238,7 @@ class AiServer
         }
 
         // 验证token有效性
-        $authResult = $this->validateToken($token, (string)$userId);
+        $authResult = $this->validateToken($token,$userId);
         $userId = "".$authResult['user_id'];
         if (!$authResult['success']) {
             $this->sendErrorMessage($connection, 'Authentication failed: ' . $authResult['message']);
@@ -315,7 +315,7 @@ class AiServer
                 
                 // 关联用户到房间
                 RoomUser::create([
-                    'user_id' => $user->id,
+                    'user_id' => (string)$user->id,
                     'room_id' => $roomId
                 ]);
                 
@@ -431,16 +431,11 @@ class AiServer
      */
     private function handleAiChat(TcpConnection $connection, string $message, ?int $roomId, string $userToken): void
     {
-        echo "开始处理AI对话，用户: {$userToken}, 消息: {$message}\n";
-        
         // 初始化阿里云百炼实例
         if ($this->aliyun === null) {
             try {
-                echo "初始化Aliyun客户端...\n";
                 $this->aliyun = new Aliyun();
-                echo "Aliyun客户端初始化成功\n";
             } catch (\Exception $e) {
-                echo "Aliyun客户端初始化失败: " . $e->getMessage() . "\n";
                 $this->sendErrorMessage($connection, 'AI服务初始化失败: ' . $e->getMessage());
                 return;
             }
@@ -466,7 +461,6 @@ class AiServer
         // 再广播到房间（给房间内其他用户）
         if ($roomId) {
             $this->broadcastToRoom($userMessageData, $roomId, $connection);
-            echo "已广播用户消息到房间 {$roomId}\n";
         }
 
         // 向该用户的所有连接发送AI开始响应标记
@@ -485,14 +479,11 @@ class AiServer
 
         // 获取最近30条对话历史作为上下文
         $contextMessages = $this->getRecentChatHistory($userToken, 20);
-        echo "获取到 " . count($contextMessages) . " 条历史消息作为上下文\n";
 
         // 累积AI回复内容
         $fullResponse = '';
         $chunkCount = 0;
 
-        echo "开始调用阿里云百炼流式接口（带上下文）...\n";
-        
         // 调用阿里云百炼流式接口，传入历史上下文
         $success = $this->aliyun->streamChatWithContext($message, $contextMessages, function($chunk) use ($userToken, $roomId, &$fullResponse, &$chunkCount) {
             $fullResponse .= $chunk;
@@ -564,12 +555,7 @@ class AiServer
             
             // 反转为正序（旧消息在前，新消息在后）
             $history = array_reverse($history);
-            
-            echo "✅ 获取到 " . count($history) . " 条历史消息\n";
-            if (count($history) > 0) {
-                echo "   第一条时间: " . ($history[0]['create_time'] ?? 'N/A') . "\n";
-                echo "   最后一条时间: " . ($history[count($history)-1]['create_time'] ?? 'N/A') . "\n";
-            }
+
             
             return $history;
             
@@ -593,7 +579,6 @@ class AiServer
             // 通过token查询用户ID
             $user = User::where('user_token', $userToken)->find();
             if (!$user || empty($user->id)) {
-                echo "保存对话历史失败：未找到用户信息\n";
                 return;
             }
             
@@ -614,9 +599,7 @@ class AiServer
                 'message_type' => 'ai',
                 'content' => $aiResponse
             ]);
-            
-            echo "✅ 对话历史已保存，用户ID: {$userId}, 房间ID: {$roomId}\n";
-            
+
         } catch (\Exception $e) {
             echo "❌ 保存对话历史异常: " . $e->getMessage() . "\n";
             echo "错误文件: " . $e->getFile() . ":" . $e->getLine() . "\n";
@@ -660,15 +643,10 @@ class AiServer
                 $this->sendToClient($connection, $data);
                 $sentCount++;
             } catch (\Exception $e) {
-                echo "发送消息到连接 {$connId} 失败: " . $e->getMessage() . "\n";
-                // 移除失效的连接
                 unset($this->userConnections[$userToken][$connId]);
             }
         }
 
-        if ($sentCount > 0) {
-            echo "消息已发送给 {$userToken} 的 {$sentCount} 个连接\n";
-        }
     }
 
     /**
@@ -698,10 +676,6 @@ class AiServer
                 // 移除失效的连接
                 unset($this->userConnections[$userToken][$connId]);
             }
-        }
-
-        if ($sentCount > 0) {
-            echo "用户消息已同步到 {$userToken} 的其他 {$sentCount} 个连接\n";
         }
     }
 
