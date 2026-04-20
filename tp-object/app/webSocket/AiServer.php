@@ -295,7 +295,7 @@ class AiServer
         try {
             // 查询用户信息
             $user = User::where('user_token', $token)->find();
-            $userId = $user->id;
+            $userId = "".$user->id;
             
             if (empty($user) || empty($user->id)) {
                 return [
