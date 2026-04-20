@@ -239,7 +239,7 @@ class AiServer
 
         // 验证token有效性
         $authResult = $this->validateToken($token, (string)$userId);
-        
+        $userId = "".$authResult['user_id'];
         if (!$authResult['success']) {
             $this->sendErrorMessage($connection, 'Authentication failed: ' . $authResult['message']);
             $connection->close();
@@ -288,20 +288,20 @@ class AiServer
      * 验证用户token的有效性
      * @param string $token 用户token
      * @param string $userId 用户ID
-     * @return array ['success' => bool, 'message' => string, 'room_id' => int|null]
+     * @return array ['success' => bool, 'message' => string, 'room_id' => int|null, 'user_id' => string]
      */
-    private function validateToken(string $token, string &$userId): array
+    private function validateToken(string $token, string $userId): array
     {
         try {
             // 查询用户信息
             $user = User::where('user_token', $token)->find();
-            $userId = "".$user->id;
             
             if (empty($user) || empty($user->id)) {
                 return [
                     'success' => false,
                     'message' => 'Invalid token',
-                    'room_id' => null
+                    'room_id' => null,
+                    'user_id' => $userId
                 ];
             }
 
@@ -319,7 +319,7 @@ class AiServer
                     'room_id' => $roomId
                 ]);
                 
-                echo "为用户 {$userId} 创建新房间 {$roomId}\n";
+                echo "为用户 {$user->id} 创建新房间 {$roomId}\n";
             } else {
                 $roomId = $roomUser->room_id;
             }
@@ -327,7 +327,8 @@ class AiServer
             return [
                 'success' => true,
                 'message' => 'Success',
-                'room_id' => $roomId
+                'room_id' => $roomId,
+                'user_id' => (string)$user->id
             ];
             
         } catch (\Exception $e) {
@@ -335,7 +336,8 @@ class AiServer
             return [
                 'success' => false,
                 'message' => 'Server error during authentication',
-                'room_id' => null
+                'room_id' => null,
+                'user_id' => $userId
             ];
         }
     }
