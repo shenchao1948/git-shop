@@ -290,11 +290,12 @@ class AiServer
      * @param string $userId 用户ID
      * @return array ['success' => bool, 'message' => string, 'room_id' => int|null]
      */
-    private function validateToken(string $token, string $userId): array
+    private function validateToken(string $token, string &$userId): array
     {
         try {
             // 查询用户信息
             $user = User::where('user_token', $token)->find();
+            $userId = $user->id;
             
             if (empty($user) || empty($user->id)) {
                 return [

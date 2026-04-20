@@ -92,10 +92,6 @@ class Aliyun
         try {
             // 构建请求体（包含历史上下文）
             $body = $this->buildRequestBodyWithContext($message, $historyMessages, $options);
-            
-            echo "\n[DEBUG] 请求URL: {$this->baseUrl}\n";
-            echo "[DEBUG] 历史消息数量: " . count($historyMessages) . "\n";
-            echo "[DEBUG] 请求体: " . json_encode($body, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
 
             // 发送流式请求
             $response = $this->client->post($this->baseUrl, [
@@ -159,10 +155,6 @@ class Aliyun
                     $requestBody['parameters'] = $options;
                 }
             }
-            
-            echo "[DEBUG] 应用API - 历史消息数量: " . count($historyMessages) . "\n";
-            echo "[DEBUG] 应用API - 拼接后的prompt长度: " . mb_strlen($fullPrompt) . "\n";
-            
             return $requestBody;
         } else {
             // 标准模型API的请求格式（支持多轮对话）
@@ -189,7 +181,6 @@ class Aliyun
                 'content' => $message
             ];
             
-            echo "[DEBUG] 标准API - 构建的消息列表:\n";
             foreach ($messages as $idx => $msg) {
                 echo "  [$idx] {$msg['role']}: " . mb_substr($msg['content'], 0, 50) . "...\n";
             }
@@ -521,9 +512,6 @@ class Aliyun
             
             // 标准模型API的同步调用
             $body = $this->buildRequestBody($message, $options);
-            
-            echo "\n[DEBUG] 同步请求URL: {$this->baseUrl}\n";
-            echo "[DEBUG] 同步请求体: " . json_encode($body, JSON_UNESCAPED_UNICODE) . "\n";
 
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
