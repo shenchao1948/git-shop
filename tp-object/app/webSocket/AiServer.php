@@ -898,10 +898,6 @@ class AiServer
             $localCert = $sslConfig['local_cert'] ?? '';
             $localPk = $sslConfig['local_pk'] ?? '';
 
-            // 【调试】强制打印路径并检查
-            echo "[DEBUG] 证书路径: " . realpath($localCert) . "\n";
-            echo "[DEBUG] 私钥路径: " . realpath($localPk) . "\n";
-
             if (!file_exists($localCert) || !file_exists($localPk)) {
                 echo "❌ [ERROR] 证书文件不存在！请检查 config/aliyun.php\n";
                 // 即使报错也继续尝试启动，但会失败
